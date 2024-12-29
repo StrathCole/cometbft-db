@@ -27,6 +27,11 @@ var _ DB = (*PebbleDB)(nil)
 
 func NewPebbleDB(name string, dir string) (*PebbleDB, error) {
 	opts := &pebble.Options{}
+	opts.MemTableSize = 256 << 20
+	opts.Cache = pebble.NewCache(256 << 20)
+	opts.LBaseMaxBytes = 64 << 20
+	//opts.L0CompactionThreshold = 2 // Reduce from the default of 4 to trigger compaction earlier
+	//opts.MaxConcurrentCompactions = 4
 	opts.EnsureDefaults()
 	return NewPebbleDBWithOpts(name, dir, opts)
 }
@@ -183,8 +188,22 @@ func (db *PebbleDB) Print() error {
 }
 
 // Stats implements DB.
-func (*PebbleDB) Stats() map[string]string {
-	return nil
+func (db *PebbleDB) Stats() map[string]string {
+	stats := make(map[string]string)
+	metrics := db.db.Metrics()
+	// Convert metrics to a map of strings
+	stats["BlockCacheSize"] = fmt.Sprintf("%d", metrics.BlockCache.Size)
+	stats["BlockCacheCount"] = fmt.Sprintf("%d", metrics.BlockCache.Count)
+	stats["BlockCacheHits"] = fmt.Sprintf("%d", metrics.BlockCache.Hits)
+	stats["BlockCacheMisses"] = fmt.Sprintf("%d", metrics.BlockCache.Misses)
+	stats["MemTableSize"] = fmt.Sprintf("%d", metrics.MemTable.Size)
+	stats["MemTableCount"] = fmt.Sprintf("%d", metrics.MemTable.Count)
+	stats["TableCacheSize"] = fmt.Sprintf("%d", metrics.TableCache.Size)
+	stats["TableCacheCount"] = fmt.Sprintf("%d", metrics.TableCache.Count)
+	stats["TableCacheHits"] = fmt.Sprintf("%d", metrics.TableCache.Hits)
+	stats["TableCacheMisses"] = fmt.Sprintf("%d", metrics.TableCache.Misses)
+
+	return stats
 }
 
 // NewBatch implements DB.
