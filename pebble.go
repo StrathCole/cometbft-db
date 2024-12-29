@@ -28,26 +28,23 @@ var _ DB = (*PebbleDB)(nil)
 func NewPebbleDB(name string, dir string) (*PebbleDB, error) {
 	opts := &pebble.Options{}
 
-	/*// Increase in-memory table size (reduces SSTable flushes)
-	opts.MemTableSize = 512 << 20        // 512 MB per memtable
-	opts.MemTableStopWritesThreshold = 4 // Allow up to 4 memtables before blocking writes
+	// Increase in-memory table size (reduces SSTable flushes)
+	opts.MemTableSize = 256 << 20        // 512 MB per memtable
+	opts.MemTableStopWritesThreshold = 4 // 2 GB of memtables
 
 	// Cache size (used for reads/writes; balance with available RAM)
-	opts.Cache = pebble.NewCache(1 << 30) // 1 GB cache
+	opts.Cache = pebble.NewCache(256 << 20) // 256 MB cache
 
-	// Compaction settings for aggressive parallelism
-	opts.L0CompactionThreshold = 8 // More L0 files before compaction
-	opts.LBaseMaxBytes = 512 << 20 // Larger base size for Level 1
-	// opts.MaxConcurrentCompactions = 6 // Run more compactions in parallel
-
-	// Bulk write optimizations
-	opts.DisableWAL = false  // Set to true for temporary write bursts (data loss risk)
-	opts.FlushSplitBytes = 0 // Avoid splitting flushes into smaller SSTables
 	opts.Levels = []pebble.LevelOptions{
 		{
-			TargetFileSize: 128 << 20, // Larger SSTables (128 MB per file)
+			TargetFileSize: 64 << 20, // Larger SSTables (128 MB per file)
 		},
-	}*/
+	}
+
+	opts.LBaseMaxBytes = 256 << 20    // Larger base size for Level 1
+	opts.L0CompactionThreshold = 8    // Trigger compaction at 8 SSTables in Level 0
+	opts.L0StopWritesThreshold = 16   // Pause writes at 16 Level 0 SSTables
+	opts.MaxConcurrentCompactions = 4 // Allow 4 concurrent compactions
 
 	opts.EnsureDefaults()
 	return NewPebbleDBWithOpts(name, dir, opts)
