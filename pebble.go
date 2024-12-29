@@ -28,7 +28,7 @@ var _ DB = (*PebbleDB)(nil)
 func NewPebbleDB(name string, dir string) (*PebbleDB, error) {
 	opts := &pebble.Options{}
 
-	// Increase in-memory table size (reduces SSTable flushes)
+	/*// Increase in-memory table size (reduces SSTable flushes)
 	opts.MemTableSize = 512 << 20        // 512 MB per memtable
 	opts.MemTableStopWritesThreshold = 4 // Allow up to 4 memtables before blocking writes
 
@@ -47,7 +47,7 @@ func NewPebbleDB(name string, dir string) (*PebbleDB, error) {
 		{
 			TargetFileSize: 128 << 20, // Larger SSTables (128 MB per file)
 		},
-	}
+	}*/
 
 	opts.EnsureDefaults()
 	return NewPebbleDBWithOpts(name, dir, opts)
