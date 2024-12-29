@@ -36,9 +36,9 @@ func NewPebbleDB(name string, dir string) (*PebbleDB, error) {
 	opts.Cache = pebble.NewCache(1 << 30) // 1 GB cache
 
 	// Compaction settings for aggressive parallelism
-	opts.L0CompactionThreshold = 8    // More L0 files before compaction
-	opts.LBaseMaxBytes = 512 << 20    // Larger base size for Level 1
-	opts.MaxConcurrentCompactions = 6 // Run more compactions in parallel
+	opts.L0CompactionThreshold = 8 // More L0 files before compaction
+	opts.LBaseMaxBytes = 512 << 20 // Larger base size for Level 1
+	// opts.MaxConcurrentCompactions = 6 // Run more compactions in parallel
 
 	// Bulk write optimizations
 	opts.DisableWAL = false  // Set to true for temporary write bursts (data loss risk)
