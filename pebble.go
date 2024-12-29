@@ -41,10 +41,10 @@ func NewPebbleDB(name string, dir string) (*PebbleDB, error) {
 		},
 	}
 
-	opts.LBaseMaxBytes = 256 << 20    // Larger base size for Level 1
-	opts.L0CompactionThreshold = 8    // Trigger compaction at 8 SSTables in Level 0
-	opts.L0StopWritesThreshold = 16   // Pause writes at 16 Level 0 SSTables
-	opts.MaxConcurrentCompactions = 4 // Allow 4 concurrent compactions
+	opts.LBaseMaxBytes = 256 << 20                          // Larger base size for Level 1
+	opts.L0CompactionThreshold = 8                          // Trigger compaction at 8 SSTables in Level 0
+	opts.L0StopWritesThreshold = 16                         // Pause writes at 16 Level 0 SSTables
+	opts.MaxConcurrentCompactions = func() int { return 4 } // Allow 4 concurrent compactions
 
 	opts.EnsureDefaults()
 	return NewPebbleDBWithOpts(name, dir, opts)
