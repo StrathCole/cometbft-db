@@ -12,6 +12,112 @@ import (
 	"github.com/cockroachdb/pebble"
 )
 
+type reverseSortedPebbleIterator struct {
+	keys   [][]byte
+	values [][]byte
+	index  int
+}
+
+// newReverseSortedPebbleIterator creates an iterator over keys in reverse order
+func newReverseSortedPebbleIterator(keys, values [][]byte) *reverseSortedPebbleIterator {
+	return &reverseSortedPebbleIterator{
+		keys:   keys,
+		values: values,
+		index:  0,
+	}
+}
+
+func (itr *reverseSortedPebbleIterator) Domain() ([]byte, []byte) {
+	return nil, nil
+}
+
+func (itr *reverseSortedPebbleIterator) Valid() bool {
+	return itr.index < len(itr.keys)
+}
+
+func (itr *reverseSortedPebbleIterator) Key() []byte {
+	if !itr.Valid() {
+		return nil
+	}
+	return itr.keys[itr.index]
+}
+
+func (itr *reverseSortedPebbleIterator) Value() []byte {
+	if !itr.Valid() {
+		return nil
+	}
+	return itr.values[itr.index]
+}
+
+func (itr *reverseSortedPebbleIterator) Next() {
+	if itr.Valid() {
+		itr.index++
+	}
+}
+
+func (itr *reverseSortedPebbleIterator) Error() error {
+	return nil
+}
+
+func (itr *reverseSortedPebbleIterator) Close() error {
+	itr.keys = nil
+	itr.values = nil
+	return nil
+}
+
+type sortedPebbleIterator struct {
+	keys   [][]byte
+	values [][]byte
+	index  int
+}
+
+// newSortedPebbleIterator creates an iterator over sorted keys
+func newSortedPebbleIterator(keys, values [][]byte) *sortedPebbleIterator {
+	return &sortedPebbleIterator{
+		keys:   keys,
+		values: values,
+		index:  0,
+	}
+}
+
+func (itr *sortedPebbleIterator) Domain() ([]byte, []byte) {
+	return nil, nil
+}
+
+func (itr *sortedPebbleIterator) Valid() bool {
+	return itr.index < len(itr.keys)
+}
+
+func (itr *sortedPebbleIterator) Key() []byte {
+	if !itr.Valid() {
+		return nil
+	}
+	return itr.keys[itr.index]
+}
+
+func (itr *sortedPebbleIterator) Value() []byte {
+	if !itr.Valid() {
+		return nil
+	}
+	return itr.values[itr.index]
+}
+
+func (itr *sortedPebbleIterator) Next() {
+	if itr.Valid() {
+		itr.index++
+	}
+}
+
+func (itr *sortedPebbleIterator) Error() error {
+	return nil
+}
+
+func (itr *sortedPebbleIterator) Close() error {
+	itr.keys = nil
+	itr.values = nil
+	return nil
+}
+
 func init() {
 	dbCreator := func(name string, dir string) (DB, error) {
 		return NewPebbleDB(name, dir)
@@ -234,33 +340,54 @@ func (db *PebbleDB) Iterator(start, end []byte) (Iterator, error) {
 	}
 	itr := db.db.NewIter(opts)
 
-	// Collect and sort all keys before returning the iterator
+	// Collect all keys before returning the iterator
 	var keys [][]byte
+	var values [][]byte
+
 	for itr.First(); itr.Valid(); itr.Next() {
-		keys = append(keys, cp(itr.Key()))
+		key := append([]byte{}, itr.Key()...) // Copy to avoid mutation issues
+		value := append([]byte{}, itr.Value()...)
+		keys = append(keys, key)
+		values = append(values, value)
 	}
 	itr.Close() // Close the raw iterator
 
-	// Sort keys to ensure deterministic ordering
+	// Sort keys lexicographically
 	sort.Slice(keys, func(i, j int) bool {
 		return bytes.Compare(keys[i], keys[j]) < 0
 	})
 
-	return newPebbleDBIteratorFromSorted(keys, db), nil
+	// Create a new iterator from the sorted results
+	return newSortedPebbleIterator(keys, values), nil
 }
 
 // ReverseIterator implements DB.
 func (db *PebbleDB) ReverseIterator(start, end []byte) (Iterator, error) {
-	if (start != nil && len(start) == 0) || (end != nil && len(end) == 0) {
-		return nil, errKeyEmpty
-	}
-	o := pebble.IterOptions{
+	opts := &pebble.IterOptions{
 		LowerBound: start,
 		UpperBound: end,
 	}
-	itr := db.db.NewIter(&o)
-	itr.Last()
-	return newPebbleDBIterator(itr, start, end, true), nil
+	itr := db.db.NewIter(opts)
+
+	// Collect all keys before returning the iterator
+	var keys [][]byte
+	var values [][]byte
+
+	for itr.Last(); itr.Valid(); itr.Prev() {
+		key := append([]byte{}, itr.Key()...) // Copy to avoid mutation issues
+		value := append([]byte{}, itr.Value()...)
+		keys = append(keys, key)
+		values = append(values, value)
+	}
+	itr.Close() // Close the raw iterator
+
+	// Sort keys in descending order
+	sort.Slice(keys, func(i, j int) bool {
+		return bytes.Compare(keys[i], keys[j]) > 0 // Reverse order
+	})
+
+	// Create a new reverse iterator from the sorted results
+	return newReverseSortedPebbleIterator(keys, values), nil
 }
 
 var _ Batch = (*pebbleDBBatch)(nil)
