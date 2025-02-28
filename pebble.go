@@ -303,7 +303,8 @@ func (b *pebbleDBBatch) Delete(key []byte) error {
 
 // Write implements Batch.
 func (b *pebbleDBBatch) Write() error {
-	if b.batch == nil {
+	return b.WriteSync()
+	/*if b.batch == nil {
 		return errBatchClosed
 	}
 
@@ -314,7 +315,7 @@ func (b *pebbleDBBatch) Write() error {
 	}
 	// Make sure batch cannot be used afterwards. Callers should still call Close(), for errors.
 
-	return b.Close()
+	return b.Close()*/
 }
 
 // WriteSync implements Batch.
