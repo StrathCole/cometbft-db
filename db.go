@@ -35,6 +35,8 @@ const (
 	RocksDBBackend BackendType = "rocksdb"
 
 	BadgerDBBackend BackendType = "badgerdb"
+
+	PebbleDBBackend BackendType = "pebbledb"
 )
 
 type dbCreator func(name string, dir string) (DB, error)
