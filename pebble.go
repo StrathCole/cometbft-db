@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"fmt"
 	"path/filepath"
+	"sort"
 
 	"github.com/cockroachdb/pebble"
 )
@@ -67,7 +68,6 @@ func (db *PebbleDB) Get(key []byte) ([]byte, error) {
 	if len(key) == 0 {
 		return nil, errKeyEmpty
 	}
-
 	res, closer, err := db.db.Get(key)
 	if err != nil {
 		if err == pebble.ErrNotFound {
@@ -77,7 +77,8 @@ func (db *PebbleDB) Get(key []byte) ([]byte, error) {
 	}
 	defer closer.Close()
 
-	return cp(res), nil
+	// Copy value to avoid cached reads affecting state
+	return append([]byte{}, res...), nil
 }
 
 // Has implements DB.
@@ -227,17 +228,25 @@ func (db *PebbleDB) NewBatch() Batch {
 
 // Iterator implements DB.
 func (db *PebbleDB) Iterator(start, end []byte) (Iterator, error) {
-	if (start != nil && len(start) == 0) || (end != nil && len(end) == 0) {
-		return nil, errKeyEmpty
-	}
-	o := pebble.IterOptions{
+	opts := &pebble.IterOptions{
 		LowerBound: start,
 		UpperBound: end,
 	}
-	itr := db.db.NewIter(&o)
-	itr.First()
+	itr := db.db.NewIter(opts)
 
-	return newPebbleDBIterator(itr, start, end, false), nil
+	// Collect and sort all keys before returning the iterator
+	var keys [][]byte
+	for itr.First(); itr.Valid(); itr.Next() {
+		keys = append(keys, cp(itr.Key()))
+	}
+	itr.Close() // Close the raw iterator
+
+	// Sort keys to ensure deterministic ordering
+	sort.Slice(keys, func(i, j int) bool {
+		return bytes.Compare(keys[i], keys[j]) < 0
+	})
+
+	return newPebbleDBIteratorFromSorted(keys, db), nil
 }
 
 // ReverseIterator implements DB.
