@@ -20,30 +20,36 @@ func init() {
 
 // PebbleDB is a PebbleDB backend.
 type PebbleDB struct {
-	db *pebble.DB
+	db    *pebble.DB
+	cache *pebble.Cache
 }
 
 var _ DB = (*PebbleDB)(nil)
 
 func NewPebbleDB(name string, dir string) (*PebbleDB, error) {
-	cache := pebble.NewCache(4 << 30) // 4GB block cache
+	cache := pebble.NewCache(4 << 30) // 4GB
 
 	opts := &pebble.Options{
 		Cache:                    cache,
 		MaxOpenFiles:             10000,
 		L0CompactionThreshold:    8,
 		L0StopWritesThreshold:    12,
-		MaxConcurrentCompactions: 4,
-		WALBytesFlushThreshold:   4 << 20, // 4MB
+		MaxConcurrentCompactions: func() int { return 4 },
+		TargetFileSizeBase:       2 << 20,
+		BlockSize:                4 << 10,
 	}
 	opts.EnsureDefaults()
 
-	db, err := NewPebbleDBWithOpts(name, dir, opts)
+	dbPath := filepath.Join(dir, name+".db")
+	p, err := pebble.Open(dbPath, opts)
 	if err != nil {
 		cache.Unref()
 		return nil, err
 	}
-	return db, nil
+	return &PebbleDB{
+		db:    p,
+		cache: cache,
+	}, nil
 }
 
 func NewPebbleDBWithOpts(name string, dir string, opts *pebble.Options) (*PebbleDB, error) {
@@ -180,14 +186,11 @@ func (db *PebbleDB) Compact(start, end []byte) (err error) {
 }
 
 // Close implements DB.
-func (db PebbleDB) Close() error {
-	if db.db != nil {
-		if db.db.Cache != nil {
-			db.db.Cache.Unref()
-		}
-		return db.db.Close()
+func (db *PebbleDB) Close() error {
+	if db.cache != nil {
+		db.cache.Unref()
 	}
-	return nil
+	return db.db.Close()
 }
 
 // Print implements DB.
