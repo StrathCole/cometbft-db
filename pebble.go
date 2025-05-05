@@ -26,9 +26,24 @@ type PebbleDB struct {
 var _ DB = (*PebbleDB)(nil)
 
 func NewPebbleDB(name string, dir string) (*PebbleDB, error) {
-	opts := &pebble.Options{}
+	cache := pebble.NewCache(4 << 30) // 4GB block cache
+
+	opts := &pebble.Options{
+		Cache:                    cache,
+		MaxOpenFiles:             10000,
+		L0CompactionThreshold:    8,
+		L0StopWritesThreshold:    12,
+		MaxConcurrentCompactions: 4,
+		WALBytesFlushThreshold:   4 << 20, // 4MB
+	}
 	opts.EnsureDefaults()
-	return NewPebbleDBWithOpts(name, dir, opts)
+
+	db, err := NewPebbleDBWithOpts(name, dir, opts)
+	if err != nil {
+		cache.Unref()
+		return nil, err
+	}
+	return db, nil
 }
 
 func NewPebbleDBWithOpts(name string, dir string, opts *pebble.Options) (*PebbleDB, error) {
@@ -166,7 +181,12 @@ func (db *PebbleDB) Compact(start, end []byte) (err error) {
 
 // Close implements DB.
 func (db PebbleDB) Close() error {
-	db.db.Close()
+	if db.db != nil {
+		if db.db.Cache != nil {
+			db.db.Cache.Unref()
+		}
+		return db.db.Close()
+	}
 	return nil
 }
 
