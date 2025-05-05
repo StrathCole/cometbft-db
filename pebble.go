@@ -35,8 +35,6 @@ func NewPebbleDB(name string, dir string) (*PebbleDB, error) {
 		L0CompactionThreshold:    8,
 		L0StopWritesThreshold:    12,
 		MaxConcurrentCompactions: func() int { return 4 },
-		TargetFileSizeBase:       2 << 20,
-		BlockSize:                4 << 10,
 	}
 	opts.EnsureDefaults()
 
