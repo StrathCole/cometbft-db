@@ -10,7 +10,6 @@ import (
 	"runtime"
 
 	"github.com/cockroachdb/pebble"
-	"github.com/cockroachdb/pebble/filter"
 )
 
 func init() {
@@ -39,7 +38,7 @@ func NewPebbleDB(name string, dir string) (*PebbleDB, error) {
 		L0CompactionThreshold:       16,
 		L0StopWritesThreshold:       32,
 		MaxConcurrentCompactions:    func() int { return runtime.GOMAXPROCS(0) },
-		Filter:                      filter.NewBloomFilter(10),
+		Filters:                     pebble.StandardFilters(), // Built-in bloom filters
 		Compression:                 pebble.ZstdCompression,
 		BytesPerSync:                1 << 20, // 1MB
 	}
