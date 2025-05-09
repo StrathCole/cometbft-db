@@ -41,7 +41,7 @@ func NewPebbleDB(name string, dir string) (*PebbleDB, error) {
 			"bloom": bloom.FilterPolicy(10), // 10 bits per key for bloom filter
 		},
 		BytesPerSync: 1 << 20, // 1MB*/
-		/*Levels: []pebble.LevelOptions{
+		Levels: []pebble.LevelOptions{
 			{TargetFileSize: 64 << 20, Compression: pebble.ZstdCompression},  // Level 0: 64MB
 			{TargetFileSize: 64 << 20, Compression: pebble.ZstdCompression},  // Level 1: 64MB
 			{TargetFileSize: 128 << 20, Compression: pebble.ZstdCompression}, // Level 2: 128MB
@@ -49,7 +49,7 @@ func NewPebbleDB(name string, dir string) (*PebbleDB, error) {
 			{TargetFileSize: 512 << 20, Compression: pebble.ZstdCompression}, // Level 4: 512MB
 			{TargetFileSize: 1 << 30, Compression: pebble.ZstdCompression},   // Level 5: 1GB
 			{TargetFileSize: 2 << 30, Compression: pebble.ZstdCompression},   // Level 6: 2GB
-		},*/
+		},
 	}
 	opts.EnsureDefaults()
 
