@@ -7,8 +7,10 @@ import (
 	"bytes"
 	"fmt"
 	"path/filepath"
+	"runtime"
 
 	"github.com/cockroachdb/pebble"
+	"github.com/cockroachdb/pebble/filter"
 )
 
 func init() {
@@ -27,14 +29,19 @@ type PebbleDB struct {
 var _ DB = (*PebbleDB)(nil)
 
 func NewPebbleDB(name string, dir string) (*PebbleDB, error) {
-	cache := pebble.NewCache(4 << 30) // 4GB
+	cache := pebble.NewCache(16 << 30) // 16GB
 
 	opts := &pebble.Options{
-		Cache:                    cache,
-		MaxOpenFiles:             10000,
-		L0CompactionThreshold:    8,
-		L0StopWritesThreshold:    12,
-		MaxConcurrentCompactions: func() int { return 4 },
+		Cache:                       cache,
+		MemTableSize:                256 << 20, // 256MB
+		MemTableStopWritesThreshold: 4,
+		MaxOpenFiles:                50000,
+		L0CompactionThreshold:       16,
+		L0StopWritesThreshold:       32,
+		MaxConcurrentCompactions:    func() int { return runtime.GOMAXPROCS(0) },
+		Filter:                      filter.NewBloomFilter(10),
+		Compression:                 pebble.ZstdCompression,
+		BytesPerSync:                1 << 20, // 1MB
 	}
 	opts.EnsureDefaults()
 
