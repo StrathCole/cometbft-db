@@ -42,13 +42,13 @@ func NewPebbleDB(name string, dir string) (*PebbleDB, error) {
 		},
 		BytesPerSync: 1 << 20, // 1MB
 		Levels: []pebble.LevelOptions{
-			{TargetFileSize: 64 << 20, Compression: pebble.ZstdCompression},  // Level 0: 64MB
-			{TargetFileSize: 64 << 20, Compression: pebble.ZstdCompression},  // Level 1: 64MB
-			{TargetFileSize: 128 << 20, Compression: pebble.ZstdCompression}, // Level 2: 128MB
-			{TargetFileSize: 256 << 20, Compression: pebble.ZstdCompression}, // Level 3: 256MB
-			{TargetFileSize: 512 << 20, Compression: pebble.ZstdCompression}, // Level 4: 512MB
-			{TargetFileSize: 1 << 30, Compression: pebble.ZstdCompression},   // Level 5: 1GB
-			{TargetFileSize: 2 << 30, Compression: pebble.ZstdCompression},   // Level 6: 2GB
+			{TargetFileSize: 64 << 20, Compression: pebble.SnappyCompression},  // Level 0: 64MB
+			{TargetFileSize: 64 << 20, Compression: pebble.SnappyCompression},  // Level 1: 64MB
+			{TargetFileSize: 128 << 20, Compression: pebble.SnappyCompression}, // Level 2: 128MB
+			{TargetFileSize: 256 << 20, Compression: pebble.SnappyCompression}, // Level 3: 256MB
+			{TargetFileSize: 512 << 20, Compression: pebble.SnappyCompression}, // Level 4: 512MB
+			{TargetFileSize: 1 << 30, Compression: pebble.SnappyCompression},   // Level 5: 1GB
+			{TargetFileSize: 2 << 30, Compression: pebble.SnappyCompression},   // Level 6: 2GB
 		},
 	}
 	opts.EnsureDefaults()
