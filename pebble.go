@@ -37,7 +37,6 @@ func NewPebbleDB(name string, dir string) (*PebbleDB, error) {
 		MaxOpenFiles:                50000,
 		L0CompactionThreshold:       16,
 		L0StopWritesThreshold:       32,
-		MaxConcurrentCompactions:    func() int { return 4 },
 		Filters: map[string]pebble.FilterPolicy{
 			"bloom": bloom.FilterPolicy(10), // 10 bits per key for bloom filter
 		},
