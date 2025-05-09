@@ -31,12 +31,12 @@ func NewPebbleDB(name string, dir string) (*PebbleDB, error) {
 	cache := pebble.NewCache(16 << 30) // 16GB
 
 	opts := &pebble.Options{
-		Cache: cache,
-		//MemTableSize:                256 << 20, // 256MB
-		//MemTableStopWritesThreshold: 4,
-		MaxOpenFiles:             50000,
-		L0CompactionThreshold:    16,
-		L0StopWritesThreshold:    32,
+		Cache:                       cache,
+		MemTableSize:                256 << 20, // 256MB
+		MemTableStopWritesThreshold: 4,
+		MaxOpenFiles:                50000,
+		/*L0CompactionThreshold:    16,
+		L0StopWritesThreshold:    32,*/
 		MaxConcurrentCompactions: func() int { return runtime.GOMAXPROCS(0) },
 		/*Filters: map[string]pebble.FilterPolicy{
 			"bloom": bloom.FilterPolicy(10), // 10 bits per key for bloom filter
