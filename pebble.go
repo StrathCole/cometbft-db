@@ -7,10 +7,8 @@ import (
 	"bytes"
 	"fmt"
 	"path/filepath"
-	"runtime"
 
 	"github.com/cockroachdb/pebble"
-	"github.com/cockroachdb/pebble/bloom"
 )
 
 func init() {
@@ -32,7 +30,7 @@ func NewPebbleDB(name string, dir string) (*PebbleDB, error) {
 	cache := pebble.NewCache(16 << 30) // 16GB
 
 	opts := &pebble.Options{
-		Cache:                       cache,
+		/*Cache:                       cache,
 		MemTableSize:                256 << 20, // 256MB
 		MemTableStopWritesThreshold: 4,
 		MaxOpenFiles:                50000,
@@ -51,7 +49,7 @@ func NewPebbleDB(name string, dir string) (*PebbleDB, error) {
 			{TargetFileSize: 512 << 20, Compression: pebble.ZstdCompression}, // Level 4: 512MB
 			{TargetFileSize: 1 << 30, Compression: pebble.ZstdCompression},   // Level 5: 1GB
 			{TargetFileSize: 2 << 30, Compression: pebble.ZstdCompression},   // Level 6: 2GB
-		},
+		},*/
 	}
 	opts.EnsureDefaults()
 
