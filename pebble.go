@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"fmt"
 	"path/filepath"
+	"runtime"
 
 	"github.com/cockroachdb/pebble"
 	"github.com/cockroachdb/pebble/bloom"
@@ -35,9 +36,7 @@ func NewPebbleDB(name string, dir string) (*PebbleDB, error) {
 		MemTableSize:                256 << 20, // 256MB
 		MemTableStopWritesThreshold: 4,
 		MaxOpenFiles:                50000,
-		/*L0CompactionThreshold:    16,
-		L0StopWritesThreshold:    32,*/
-		//MaxConcurrentCompactions: func() int { return runtime.GOMAXPROCS(0) },
+		MaxConcurrentCompactions:    func() int { return runtime.GOMAXPROCS(0) },
 		Filters: map[string]pebble.FilterPolicy{
 			"bloom": bloom.FilterPolicy(10), // 10 bits per key for bloom filter
 		},
