@@ -111,20 +111,27 @@ func (db *PebbleDB) Has(key []byte) (bool, error) {
 }
 
 // Set implements DB.
-func (db *PebbleDB) Set(key []byte, value []byte) error {
+func (b *pebbleDBBatch) Set(key, value []byte) error {
 	if len(key) == 0 {
 		return errKeyEmpty
 	}
 	if value == nil {
 		return errValueNil
 	}
-
-	wopts := pebble.NoSync
-	err := db.db.Set(key, value, wopts)
-	if err != nil {
-		return err
+	if b.batch == nil {
+		return errBatchClosed
 	}
-	return nil
+
+	// Prevent Pebble batch from exceeding 4 GB hard limit
+	const flushThreshold = 3_500_000_000 // ~3.5 GB
+	if b.batch.Len() > flushThreshold {
+		if err := b.batch.Commit(pebble.Sync); err != nil {
+			return err
+		}
+		b.batch.Reset()
+	}
+
+	return b.batch.Set(key, value, nil)
 }
 
 // SetSync implements DB.
