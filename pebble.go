@@ -312,13 +312,20 @@ func (b *pebbleDBBatch) Set(key, value []byte) error {
 	return b.batch.Set(key, value, nil)
 }
 
-// Delete implements Batch.
 func (b *pebbleDBBatch) Delete(key []byte) error {
 	if len(key) == 0 {
 		return errKeyEmpty
 	}
 	if b.batch == nil {
 		return errBatchClosed
+	}
+
+	const flushThreshold = 3_500_000_000 // ~3.5GB
+	if b.batch.Len() > flushThreshold {
+		if err := b.batch.Commit(pebble.Sync); err != nil {
+			return err
+		}
+		b.batch.Reset()
 	}
 
 	return b.batch.Delete(key, nil)
